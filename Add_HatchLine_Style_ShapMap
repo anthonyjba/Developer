@@ -1,0 +1,200 @@
+ejemplo de GenericTheme:
+========================
+returnStyle.HatchLine = new HatchBrush(HatchStyle.LightVertical, Color.White, Color.Transparent);
+returnStyle.HatchLine = new HatchBrush(HatchStyle.LightHorizontal, Color.White, Color.Transparent);
+returnStyle.HatchLine = new HatchBrush(HatchStyle.OutlinedDiamond, matrixColor, Color.White);
+
+	GradientTheme popdens = new GradientTheme("PopDens", 0, 400, min, max);
+        //Setting the FillColorBlend will override any fill-style in the min and max fills.                
+        popdens.FillColorBlend = SharpMap.Rendering.Thematics.ColorBlend.GreenToBlue;
+        popdens.SemiTrans = 60;
+
+VectorStyle.cs
+==============
+* Dentro de Properties agregar:
+
+	private HatchBrush _hatchline;
+
+* Agregar tambien
+
+	/// <summary>
+        /// Gets the hatch for Polygon geometries 
+        /// </summary>
+        public HatchBrush HatchLine
+        {
+            get { return _hatchline; }
+            set { _hatchline = value; }
+        }
+
+* Dentro del metodo "VectorStyle Clone" agregar: 
+
+	if (_hatchline != null)
+            vs._hatchline = _hatchline.Clone() as HatchBrush;
+
+
+VectorRenderer.cs
+=================
+
+* Reemplazar este metodo "DrawMultiPolygon" Por:
+
+public static void DrawMultiPolygon(Graphics g, IMultiPolygon pols, Brush brush, Pen pen, HatchBrush hatch, bool clip, Map map)
+
+y reemplazar la línea : DrawPolygon(g, p, brush, pen, hatch, clip, map);
+
+* Reemplazar este metodo "DrawPolygon" Por:
+
+public static void DrawPolygon(Graphics g, IPolygon pol, Brush brush, Pen pen, HatchBrush hatch, bool clip, Map map)
+
+y añador dentro del metodo: 
+
+	// Only render inside of polygon if the hatch isn't null 
+           if (hatch != null)
+              g.FillPath(hatch, gp);
+
+VectorLayer.cs
+==============
+* Dentro del metodo "RenderGeometry" en el swicth(geomtryType) reemplazar los 2 cases:
+
+case OgcGeometryType.Polygon:
+                    if (style.EnableOutline)
+                        VectorRenderer.DrawPolygon(g, (IPolygon)feature, style.Fill, style.Outline, style.HatchLine, _clippingEnabled,
+                                                   map);
+                    else
+                        VectorRenderer.DrawPolygon(g, (IPolygon)feature, style.Fill, null, style.HatchLine, _clippingEnabled, map);
+                    break;
+                case OgcGeometryType.MultiPolygon:
+                    if (style.EnableOutline)
+                        VectorRenderer.DrawMultiPolygon(g, (IMultiPolygon)feature, style.Fill, style.Outline, style.HatchLine,
+                                                        _clippingEnabled, map);
+                    else
+                        VectorRenderer.DrawMultiPolygon(g, (IMultiPolygon)feature, style.Fill, null, style.HatchLine, _clippingEnabled,
+                                                        map);
+                    break; 
+
+
+GradientTheme.cs
+================
+
+*add Propiedad:
+	private int _semiTrans;
+
+	/// <summary>
+        /// Set the value SemiTransparent
+        /// </summary>
+        public Int32 SemiTrans
+        {
+            get { return _semiTrans; }
+            set { _semiTrans = value; }
+        }
+
+* Dentro del Método "CalculateVectorStyle" reemplazar el if:
+
+if (_fillColorBlend != null)
+            {
+                Color baseColor =_fillColorBlend.GetColor(fFrac);
+                if(_semiTrans != 0)
+                    style.Fill =  new SolidBrush(Color.FromArgb(_semiTrans, baseColor));
+                else
+                    style.Fill =  new SolidBrush(baseColor);
+            }
+
+
+
+/****************************************************************************************/
+LabelLayer.cs
+=============
+add en el metodo Render() Linea 463
+
+	/*** Adaptado por Anthony **/
+        var featureGeometry = (IGeometry)feature.Geometry.Clone();
+        /***/
+
+Añadir directorio "DataJSON" dentro del folder "Converters"
+DataJSON.cs, DataJSONHelper.cs, DataJSONWriter.cs
+
+
+
+StdJsonMapHandler.cs
+====================
+
+//add by Anthony
+                StringWriter writer = new StringWriter();
+                string paramOnlyDatos = request.GetParam("ONLY_DATA"); /*Parametro para obtener solo los datos del Feature **/
+                bool soloDatos = false;
+
+                if (!String.IsNullOrEmpty(paramOnlyDatos))
+                    soloDatos = (paramOnlyDatos.ToUpper().Equals("TRUE") ? true : false);
+
+                if (soloDatos)
+                {
+                    IEnumerable<DataJSON> items = GetData<DataJSON>(map, bbox);
+                    DataJSONWriter.Write(items, writer);
+                }
+                else
+                {
+                    IEnumerable<GeoJSON> items = GetData(map, bbox);
+                    GeoJSONWriter.Write(items, writer);
+                }
+
+Después del: string buffer = writer.ToString();
+
+string cb = request.GetParam("Callback");
+                if (!String.IsNullOrEmpty(cb))
+                {
+                    buffer = string.Concat(cb, '(', buffer, ')');
+                }
+
+GetFeatureInfo.cs
+=================
+
+Se reemplazo el metodo TryData por
+protected bool TryGetData(Map map,
+            float x, float y,
+            int pixelSensitivity,
+            WmsServer.InterSectDelegate intersectDelegate,
+            ICanQueryLayer queryLayer,
+            string cqlFilter,            
+            out IFeatureCollectionSet fds,
+            IMathTransform transform = null)
+
+Dentro del if(IntersectDelegate != null) se agregó:
+
+	if (pixelSensitivity == 0)
+                {
+                    if (transform != null)
+                        queryBox = GeometryTransform.TransformBox(queryBox, transform.Inverse());
+                }
+
+GetFeatureInfoJson.cs
+=====================
+
+Se movió el if: querylayer antes del try para pasar el parámetro transform
+
+WmsServer.cs
+============
+
+Se añade estas 2 líneas debajo del: 
+	else if (String.Equals(req, "GetFeatureInfo", @case))
+		//Modificado por Anthony
+		PixelSensitivity = 0;
+		IntersectPoint();
+
+
+	/// <summary>
+        ///   Este método permite hacer la interseccion de una collecion con un punto clickeado en el mapa
+        /// </summary>
+        private static void IntersectPoint()
+        {
+            IntersectDelegate = delegate(IFeatureCollection featureDataTable, Envelope box)
+            {
+                IGeometryFactory geomFactory;
+                geomFactory = GeoAPI.GeometryServiceProvider.Instance.CreateGeometryFactory(0);
+                IGeometry point = geomFactory.CreatePoint(new Coordinate(box.MinX, box.MaxY));
+
+                var fds = new FeatureDataSet();
+                SharpMap.Data.Providers.FeatureProvider fp = new SharpMap.Data.Providers.FeatureProvider(featureDataTable);
+                fp.ExecuteIntersectionQuery(point, fds);
+
+                return fds.Tables[0];
+            };
+        }
