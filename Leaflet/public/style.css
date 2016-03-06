@@ -1,0 +1,26 @@
+.subunit.ESC { fill: #ddc; }
+.subunit.ESI { fill: #cdd; }
+.subunit.ESX { fill: transparent; }
+.subunit.SEC { fill: #dcd; }
+.subunit.SEM { display: none; }
+
+.subunit {
+  stroke: #000;
+  stroke-linejoin: round;
+}
+
+.subunit-boundary {
+  fill: none;
+  stroke: #777;
+  stroke-linejoin: round;
+}
+
+.province {
+  stroke: #000;
+  stroke-dasharray: 2,2;
+  stroke-linejoin: round;
+}
+
+.place-label {
+  font-size: 0.5em;
+}

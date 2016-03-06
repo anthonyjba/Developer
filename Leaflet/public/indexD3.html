@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+</body>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 960,
+    height = 450;
+
+var svg = d3.select("body").append("svg")
+.attr("width", width)
+.attr("height", height);
+
+d3.json("json", function(error, es) {
+    if (error) return console.error(error);
+    console.log(es);
+
+    var subunits = topojson.feature(es, es.objects.subunits);
+    var provinces = topojson.feature(es, es.objects.provinces);
+
+    var projection = d3.geo.mercator()
+    .scale(2300)
+    .center([0, 40])
+    .translate([width / 2, height / 2]);
+
+    var path = d3.geo.path()
+    .projection(projection);
+
+    svg.selectAll(".province")
+      .data(provinces.features)
+      .enter()
+      .append("path")
+      .attr("class", function(d) { return "province " + d.id; })
+      .attr("d", path)
+      .style('fill', function(d) { return d3.hsl(Math.random() * 100, 0.5, 0.5); });
+
+    svg.selectAll(".subunit")
+      .data(subunits.features)
+      .enter()
+      .append("path")
+      .attr("class", function(d) { return "subunit " + d.id; })
+      .attr("d", path);
+
+    svg.append("path")
+      .datum(topojson.mesh(es, es.objects.subunits, function(a, b) { return a !== b && a.id !== "ESP"; }))
+      .attr("d", path)
+      .attr("class", "subunit-boundary");
+
+    svg.append("path")
+      .datum(topojson.feature(es, es.objects.places))
+      .attr("d", path)
+      .attr("class", "place");
+
+    svg.selectAll(".place-label")
+      .data(topojson.feature(es, es.objects.places).features)
+      .enter().append("text")
+      .attr("class", "place-label")
+      .attr("transform", function(d) { return "translate(" + projection(d.geometry.coordinates) + ")"; })
+      .attr("dy", ".35em")
+      .text(function(d) { return d.properties.name; });
+
+    svg.selectAll(".place-label")
+      .attr("x", function(d) { return d.geometry.coordinates[0] > -1 ? 6 : -6; })
+      .style("text-anchor", function(d) { return d.geometry.coordinates[0] > -1 ? "start" : "end"; });
+
+});
+
+</script>
+</html>
