@@ -17,5 +17,19 @@ app.get('/json', function(req, res){
   res.sendfile(__dirname + '/es.json');
 });
 
+app.get('/lld3', function(req, res){
+  res.sendfile(__dirname + '/public/index.html');
+});
+
+app.get('/zipcode', function(req, res){
+  res.sendfile(__dirname + '/public/zipcode.html');
+});
+
+app.get('/zipcode.tsv', function(req, res){
+  res.sendfile(__dirname + '/public/zipcode.tsv');
+});
+
 // escuchar
-app.listen(9000);
+app.listen(9000, function (){
+    console.log('Escuchando sobre el puerto 9000');
+});
