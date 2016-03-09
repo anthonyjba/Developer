@@ -21,13 +21,22 @@ app.get('/lld3', function(req, res){
   res.sendfile(__dirname + '/public/index.html');
 });
 
+// Ejemplo de D3 para filtrar las muestras de Valencia
+app.get('/muestras', function(req, res){
+  res.sendfile(__dirname + '/public/muestras.html');
+});
+app.get('/parcela', function(req, res){
+  res.sendfile(__dirname + '/public/files/parc_val_1.csv');
+});
+
+/* Ejemplo de D3 para filtrar los zipcode de USA
 app.get('/zipcode', function(req, res){
   res.sendfile(__dirname + '/public/zipcode.html');
 });
-
 app.get('/zipcode.tsv', function(req, res){
-  res.sendfile(__dirname + '/public/zipcode.tsv');
+  res.sendfile(__dirname + '/public/files/zipcode.tsv');
 });
+*/
 
 // escuchar
 app.listen(9000, function (){

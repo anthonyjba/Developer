@@ -5,6 +5,7 @@
 input,
 canvas {
   position: absolute;
+  top: 40;
 }
 
 input {
@@ -24,32 +25,50 @@ input#t2 {
   margin: 10px 184px;
 }
 
+select {
+    background: transparent;
+    width: 150px;
+    position: absolute;
+}
+
+
+
 </style>
+<span>Campo:</span>
+<select name="field" id="f1">
+    <option value="TUREG" selected>TUREG</option>
+    <option value="TUSEC">TUSEC</option>
+</select><br>
+
 <input id="t1" autofocus maxlength=5 placeholder="type a zipcode">
-<input id="t2" autofocus maxlength=5 placeholder="valor">
+<input id="t2" maxlength=5 placeholder="valor">
+
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
 
-var width = 960,
-    height = 500;
+var width = 1000,
+    height = 550;
   
 var projection = d3.geo.mercator()
-    .scale((width + 1) / 2 / Math.PI)
+    .scale(50000)
+    .center([0, 40])
     .translate([width / 2, height / 2])
     .precision(.1);
 
-d3.tsv("zipcode.tsv", function(error, zipcodes) {
+d3.csv("parcela", function(error, source) {
   if (error) throw error;
 
   var zip0;
 
   // Compute projected locations of each zipcode.
-  zipcodes.forEach(function(d) {
-    var p = projection([+d.lon, +d.lat]);
+  source.forEach(function(d) {
+    var p = projection([+d['X'], +d['Y']]);
     if (p) d.x = Math.round(p[0]), d.y = Math.round(p[1]);
   });
+  
+  var columns = d3.select("select")
 
-  var input = d3.select("input")
+  var input = d3.selectAll("input")
       .on("cut", function() { setTimeout(change, 10); })
       .on("paste", function() { setTimeout(change, 10); })
       .on("change", change)
@@ -61,12 +80,14 @@ d3.tsv("zipcode.tsv", function(error, zipcodes) {
     var zip1 = input.property("value");
     if (zip0 === zip1) return;
     zip0 = zip1;
+    
+    var field = columns.property("value");
 
     // Select old canvases to remove after fade.
     var canvas0 = d3.selectAll("canvas");
 
-    // Add a new canvas, initially with opacity 0, to show the new zipcodes.
-    var canvas1 = d3.select("body").insert("canvas", "input")
+    // Add a new canvas, initially with opacity 0, to show the new source.
+    var canvas1 = d3.select("body").insert("canvas", "input","columns")
         .attr("width", width)
         .attr("height", height)
         .style("opacity", 0);
@@ -75,24 +96,24 @@ d3.tsv("zipcode.tsv", function(error, zipcodes) {
     context.fillStyle = "#fff";
     context.fillRect(0, 0, width, height);
 
-    // Render the inactive zipcodes.
+    // Render the inactive source.
     context.globalAlpha = .4;
     context.fillStyle = zip1 ? "#aaa" : (zip1 = "*", "#000");
-    zipcodes.forEach(function(d) {
+    source.forEach(function(d) {
       for (var i = 0, n = zip1.length; i < n; ++i) {
-        if (d.zip[i] !== zip1[i]) {
+        if (d[field] !== zip1[i]) {
           context.fillRect(d.x, d.y, 1, 1);
           return;
         }
       }
     });
 
-    // Render the active zipcodes.
+    // Render the active source.
     context.globalAlpha = 1;
     context.fillStyle = "#f00";
-    zipcodes.forEach(function(d) {
+    source.forEach(function(d) {
       for (var i = 0, n = zip1.length; i < n; ++i) {
-        if (d.zip[i] !== zip1[i]) {
+        if (d[field][i] !== zip1[i]) {
           return;
         }
       }
