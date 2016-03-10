@@ -26,22 +26,26 @@ input#t2 {
 }
 
 select {
-    background: transparent;
-    width: 150px;
-    position: absolute;
+  width: 150px;
+  position: absolute;  
+}
+
+button#run {  
+  position: absolute;
+  width: 80px;
+  margin-left: 160px;
 }
 
 
-
 </style>
-<span>Campo:</span>
-<select name="field" id="f1">
-    <option value="TUREG" selected>TUREG</option>
-    <option value="TUSEC">TUSEC</option>
-</select><br>
 
+<div id="content"></div>
+
+<span>Campo:</span>
+<!--<select id="field"></select>
 <input id="t1" autofocus maxlength=5 placeholder="type a zipcode">
-<input id="t2" maxlength=5 placeholder="valor">
+<input id="t2" maxlength=5 placeholder="valor">-->
+<button id="run" type="button">Procesar..</button><br>
 
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script>
@@ -50,10 +54,24 @@ var width = 1000,
     height = 550;
   
 var projection = d3.geo.mercator()
-    .scale(50000)
+    .scale(15000)
     .center([0, 40])
     .translate([width / 2, height / 2])
     .precision(.1);
+
+var campos = ["TUREG", "TUSEC"];
+  
+  var linebreak = document.createElement("br");
+  for(var i=0; i < campos.length;i++){
+      var selElem = document.createElement('span');
+      selElem.id = "field"+i;
+      selElem.innerText = campos[i];
+      document.getElementById('content').appendChild(selElem);      
+      var inpElem = document.createElement('input');
+      inpElem.id = "input"+i;
+      document.getElementById('content').appendChild(inpElem);
+      document.getElementById('content').appendChild(linebreak);
+  }
 
 d3.csv("parcela", function(error, source) {
   if (error) throw error;
@@ -66,28 +84,131 @@ d3.csv("parcela", function(error, source) {
     if (p) d.x = Math.round(p[0]), d.y = Math.round(p[1]);
   });
   
-  var columns = d3.select("select")
+  
+  var fieldSelect = d3.select("#field");
+    /*.on("change", function(e) {
+        year = campos[this.selectedIndex];
+        location.hash = "#" + [field.id, year].join("/");
+    });*/
 
-  var input = d3.selectAll("input")
+    fieldSelect.selectAll("option")
+    .data(campos)
+    .enter()
+    .append("option")
+        .attr("value", function(y) { return y; })
+        .text(function(y) { return y; })
+  
+  var input = d3.selectAll("#t1");
+  /*
       .on("cut", function() { setTimeout(change, 10); })
       .on("paste", function() { setTimeout(change, 10); })
       .on("change", change)
       .on("keyup", change);
+*/
 
-  change();
+
+
+  //change();
+  
+  //Button
+  var btn = d3.selectAll("#run")
+    .on("click", function(e) {
+        runFilter();
+    });
+
+  function filterByID(col,val) {
+    return function(element) {
+        return element[col].indexOf(val) === 0;
+    }  
+    /*if ('TUREG' in obj && typeof(obj.TUREG) === 'string') { && !isNaN(obj.TUREG)
+        return true;
+    } else {        
+        return false;
+    }*/
+  }  
+     
+  function runFilter(){
+      
+    
+    var values = d3.selectAll("input");    
+    var sourceTemp = source;
+    values.each( function(d, i){
+        var dato=d3.select(this).property("value");
+        console.log(dato);
+        if(dato){
+            sourceTemp = sourceTemp.filter(filterByID(campos[i],dato))
+        }        
+    });
+    
+    //var field = fieldSelect.property("value");
+    //var arrByID = source.filter(filterByID(field,input.property("value")))
+        
+    console.log(sourceTemp.length);
+    
+    render(sourceTemp);
+    
+    console.log("End Filter");
+  }
+  
+  function render(dsActive){
+    // Select old canvases to remove after fade.
+    var canvas0 = d3.selectAll("canvas");
+
+    // Add a new canvas, initially with opacity 0, to show the new source.
+    var canvas1 = d3.select("body").insert("canvas")
+        .attr("width", width)
+        .attr("height", height)
+        .style("opacity", 0);
+
+    var context = canvas1.node().getContext("2d");
+    context.fillStyle = "#fff";
+    context.fillRect(0, 0, width, height);
+
+    // Render the inactive source.
+    context.globalAlpha = .4;
+    context.fillStyle = "#000"; //zip1 ? "#aaa" : (zip1 = "*", "#000");
+    source.forEach(function(d) {
+      //for (var i = 0, n = zip1.length; i < n; ++i) {
+        //if (d[field] !== zip1[i]) {
+          context.fillRect(d.x, d.y, 1, 1);
+          //return;
+        //}
+      //}
+    });
+
+    // Render the active source.
+    context.globalAlpha = 1;
+    context.fillStyle = "#f00";
+    dsActive.forEach(function(d) {
+      /*for (var i = 0, n = zip1.length; i < n; ++i) {
+        if (d[field][i] !== zip1[i]) {
+          return;
+        }
+      }*/
+      context.fillRect(d.x, d.y, 1, 1);
+    });
+
+    // Use a transition to fade-in the new canvas.
+    // When this transition finishes, remove the old canvases.
+    canvas1.transition()
+        .duration(350)
+        .style("opacity", 1)
+        .each("end", function() { canvas0.remove(); });  
+  }
+  
 
   function change() {
     var zip1 = input.property("value");
     if (zip0 === zip1) return;
     zip0 = zip1;
     
-    var field = columns.property("value");
+    var field = fieldSelect.property("value");
 
     // Select old canvases to remove after fade.
     var canvas0 = d3.selectAll("canvas");
 
     // Add a new canvas, initially with opacity 0, to show the new source.
-    var canvas1 = d3.select("body").insert("canvas", "input","columns")
+    var canvas1 = d3.select("body").insert("canvas", "input")
         .attr("width", width)
         .attr("height", height)
         .style("opacity", 0);
