@@ -13,6 +13,7 @@ canvas {
   position: absolute;
   margin: 10px;
   border:1px solid #c3c3c3;
+  background: transparent;
 }
 
 span {
@@ -57,26 +58,52 @@ button#run {
     <button id="run" type="button">Procesar Filtro...</button><br>
 </div>
 <div id="pRight">
-    <p id="map">
-    <div id="visor"></div>
+    <div id="map"></div>
 </div>
 
 
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.5/leaflet.js"></script>
+<script src="L.D3SvgOverlay.min.js"></script>
 <script>
 
 var width = 940,
     height = 550;
 
-var map = new L.Map("map", {center: [40.415363,-3.707398], zoom: 6})
+var map = new L.Map("map", {center: [39.47796,5.32269], zoom: 10})
     .addLayer(new L.TileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"));
 
-var svg = d3.select(map.getPanes().overlayPane).append("svg"),
-    g = svg.append("g").attr("class", "leaflet-zoom-hide");
+//var svg = d3.select(map.getPanes().overlayPane).append("svg"),
+//    g = svg.append("g").attr("class", "leaflet-zoom-hide");
+var points = [];
+var pointsOverlay = L.d3SvgOverlay(function(sel,proj){
+	
+//var minLogPop = Math.log2(d3.min(cities,function(d){return d.population;}));
+var pointsUpd = sel.selectAll('rext').data(points);
+pointsUpd.enter()
+    .append('rect')
+    .attr('x',function(d){return proj.latLngToLayerPoint(d.latLng).x;})
+    .attr('y',function(d){return proj.latLngToLayerPoint(d.latLng).y;})
+    .attr('width',function(d){return 1;})
+    .attr('height',function(d){return 1;})    
+    .attr('stroke','black')
+    .attr('stroke-width',1)
+    .attr('fill',function(d){return "blue";});
+});
+
+// Use Leaflet to implement a D3 geometric transformation.
+//function projectPoint(x, y) {
+//  var point = map.latLngToLayerPoint(new L.LatLng(y, x));
+//  this.stream.point(point.x, point.y);
+//}
+
+// Create a d3.geo.path to convert GeoJSON to SVG.
+//var transform = d3.geo.transform({point: projectPoint});
+//var path = d3.geo.path()
+//  .projection(transform);
   
 var projection = d3.geo.mercator()
-    .scale(10000)
+    .scale(2800)
     .center([0, 40])
     .translate([width / 2, height / 2])
     .precision(.1);
@@ -84,7 +111,7 @@ var projection = d3.geo.mercator()
 var campos = ["TUREG", "TUSEC","INV"];
   
   var linebreak = document.createElement("br");
-  for(var i=0; i < campos.length;i++){
+  for(var i=0, max = campos.length;  i< max; i++){
       var selElem = document.createElement('span');
       selElem.id = "field"+i;
       selElem.innerText = campos[i] + ":";
@@ -96,15 +123,24 @@ var campos = ["TUREG", "TUSEC","INV"];
       document.getElementById('ctrls').appendChild(linebreak);
   }
 
+var start = new Date();
 d3.csv("parcela", function(error, source) {
   if (error) throw error;
 
-  // Compute projected locations of each zipcode.
+  points = source.map(function(d){
+    d.latLng = [+d.Y,+d.X];
+    //d.population = (d.population == '') ? 2000 : +d.population; //NAs
+    return d;
+  });
+  pointsOverlay.addTo(map);
+  
+  /* Compute projected locations of each zipcode.
   source.forEach(function(d) {
     var p = projection([+d['X'], +d['Y']]);
     if (p) d.x = Math.round(p[0]), d.y = Math.round(p[1]);
-  });
-  
+  });*/
+ 
+  console.log("se cargo el fichero csv: " + new Date().setTime(new Date().getTime() - start.getTime()) + " ms "); 
   var list=[];
   
   //Button
@@ -112,9 +148,8 @@ d3.csv("parcela", function(error, source) {
     .on("click", function(e) {
         runFilter();
   });
-
- console.log('se cargo el fichero');
- runFilter();
+ 
+ //runFilter();
    
   /** Funciones de Filtrado **/  
   function filterInclude(col,val) {
@@ -142,6 +177,7 @@ d3.csv("parcela", function(error, source) {
   }  
      
   function runFilter(){
+    var startRender = new Date();
     var values = d3.selectAll("input");    
     var sourceTemp = source;
     list.length = 0;
@@ -164,7 +200,7 @@ d3.csv("parcela", function(error, source) {
 
     render(sourceTemp);    
     console.log(sourceTemp.length);
-    console.log("End Filter");
+    console.log("Time fin render Filter: " + new Date().setTime(new Date().getTime() - startRender.getTime()) + " ms ");
   }
   
   function render(dsActive){
@@ -172,13 +208,13 @@ d3.csv("parcela", function(error, source) {
     var canvas0 = d3.selectAll("canvas");
 
     // Add a new canvas, initially with opacity 0, to show the new source.
-    var canvas1 = d3.select("#visor").insert("canvas")
+    var canvas1 = d3.select("#map").insert("canvas")
         .attr("width", width)
         .attr("height", height)
         .style("opacity", 0);
 
     var context = canvas1.node().getContext("2d");
-    context.fillStyle = "#fff";
+    //context.fillStyle = ;
     context.fillRect(0, 0, width, height);
 
     
