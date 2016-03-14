@@ -22,8 +22,8 @@ app.get('/lld3', function(req, res){
 });
 
 // Ejemplo de D3 para filtrar las muestras de Valencia
-app.get('/muestras', function(req, res){
-  res.sendfile(__dirname + '/public/muestras.html');
+app.get('/muestrasSVG', function(req, res){
+  res.sendfile(__dirname + '/public/muestrasSVG.html');
 });
 app.get('/parcela', function(req, res){
   res.sendfile(__dirname + '/public/files/parc_val_1.csv');

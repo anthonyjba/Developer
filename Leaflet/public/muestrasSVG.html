@@ -7,13 +7,7 @@
 #map {
   width: 940px;
   height: 550px;
-}
-
-canvas {
-  position: absolute;
   margin: 10px;
-  border:1px solid #c3c3c3;
-  background: transparent;
 }
 
 span {
@@ -174,45 +168,6 @@ d3.csv("parcela", function(error, source) {
     //render(sourceTemp);  
     console.log(sourceTemp.length);
     console.log("Time fin render Filter: " + new Date().setTime(new Date().getTime() - startRender.getTime()) + " ms ");
-  }
-  
-  function render(dsActive){
-    // Select old canvases to remove after fade.
-    var canvas0 = d3.selectAll("canvas");
-
-    // Add a new canvas, initially with opacity 0, to show the new source.
-    var canvas1 = d3.select("#map").insert("canvas")
-        .attr("width", width)
-        .attr("height", height)
-        .style("opacity", 0);
-
-    var context = canvas1.node().getContext("2d");
-    //context.fillStyle = ;
-    context.fillRect(0, 0, width, height);
-
-    
-    // Render the inactive source.
-    context.globalAlpha = .4;
-    context.fillStyle = list.length > 0 ? "#aaa" : "#000";
-    source.forEach(function(d) {
-    context.fillRect(d.x, d.y, 1, 1);
-    });
-
-    if(list.length > 0){     
-        // Render the active source.
-        context.globalAlpha = 1;
-        context.fillStyle = "#f00";
-        dsActive.forEach(function(d) {
-        context.fillRect(d.x, d.y, 1, 1);
-        });
-    }
-
-    // Use a transition to fade-in the new canvas.
-    // When this transition finishes, remove the old canvases.
-    canvas1.transition()
-        .duration(350)
-        .style("opacity", 1)
-        .each("end", function() { canvas0.remove(); });  
   }
   
 });
