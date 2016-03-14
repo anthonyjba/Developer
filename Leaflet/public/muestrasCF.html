@@ -9,6 +9,7 @@
   height: 550px;
   margin: 10px;
 }
+
 span {
     float: left;
     width: 70px;
@@ -21,11 +22,13 @@ input {
   text-align: center;
   margin-bottom: 5px;
 }
+
 button#run {  
   position: absolute;
   width: 155px;
   margin-left: 70px;
 }
+
 #pLeft{
     width : 270px;
     background-color: lightsteelblue;
@@ -47,11 +50,11 @@ button#run {
         <center><h3><u>Filtrar por:</u></h3><center>
     </div>
     <button id="run" type="button">Procesar Filtro...</button><br>
-    <p>Simbols: ('>','<','-')</p>
 </div>
 <div id="pRight">
     <div id="map"></div>
 </div>
+
 
 <script src="//d3js.org/d3.v3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.5/leaflet.js"></script>
@@ -62,10 +65,11 @@ var width = 940,
     height = 550;
 
 var map = new L.Map("map", {center: [40.0565634,-1.278083], zoom: 8})
-    .addLayer(new L.TileLayer("http://{s}.sm.mapstack.stamen.com/(toner-lite,$fff[difference],$fff[@23],$fff[hsl-saturation@20])/{z}/{x}/{y}.png"));
+    .addLayer(new L.TileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"));
 
 var sourceTemp = [];
 var pointsOverlay = L.d3SvgOverlay(function(sel,proj){
+    //var minLogPop = Math.log2(d3.min(cities,function(d){return d.population;}));
     var pointsUpd = sel.selectAll('rect').data(sourceTemp);
     pointsUpd.enter()
         .append('rect')
@@ -73,7 +77,7 @@ var pointsOverlay = L.d3SvgOverlay(function(sel,proj){
         .attr('y',function(d){return proj.latLngToLayerPoint(d.latLng).y;})
         .attr('width',function(d){return 1;})
         .attr('height',function(d){return 1;})        
-        .attr('fill',function(d){return "#ffd800";});
+        .attr('fill',function(d){return "blue";});
     }
 );
 
@@ -101,7 +105,7 @@ d3.csv("parcela", function(error, source) {
     d.latLng = [+d.Y,+d.X];
   });
  
-  console.log("Time to load file csv: " + new Date().setTime(new Date().getTime() - start.getTime()) + " ms "); 
+  console.log("se cargo el fichero csv: " + new Date().setTime(new Date().getTime() - start.getTime()) + " ms "); 
   var list=[];
   
   //Button
@@ -161,8 +165,9 @@ d3.csv("parcela", function(error, source) {
    
     map.removeLayer(pointsOverlay);
     pointsOverlay.addTo(map);
+    //render(sourceTemp);  
     console.log(sourceTemp.length);
-    console.log("Time to render Filter: " + new Date().setTime(new Date().getTime() - startRender.getTime()) + " ms ");
+    console.log("Time fin render Filter: " + new Date().setTime(new Date().getTime() - startRender.getTime()) + " ms ");
   }
   
 });
