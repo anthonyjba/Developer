@@ -6,13 +6,13 @@
         width: 940px;
         height: 550px;
         margin: 10px;
-    }    
+    }
+    
     span {
         float: left;
-        width: 95px;
-        font-family: Georgia, 'Times New Roman', Times, serif; 
-        font-size: 12px;
-    }    
+        width: 70px;
+    }
+    
     input {
         background: whitesmoke;
         width: 140px;
@@ -21,11 +21,13 @@
         text-align: center;
         margin-bottom: 5px;
     }
+    
     button#run {
         position: absolute;
         width: 155px;
         margin-left: 70px;
     }
+    
     #pLeft {
         width: 270px;
         background-color: lightsteelblue;
@@ -33,12 +35,14 @@
         height: 800px;
         margin: 10px;
     }
+    
     #pRight {
         margin-left: 280px;
         width: 1000px;
         position: absolute;
         height: 800px;
     }
+    
     path {
         fill: #ffd800;
         fill-opacity: .2;
@@ -81,71 +85,44 @@ for (var i = 0, max = campos.length; i < max; i++) {
     document.getElementById('ctrls').appendChild(linebreak);
 }
 
-  var leafletMap = new L.Map("map", {center: [40.0565634,-1.278083], zoom: 8})
-    .addLayer(new L.TileLayer("http://{s}.sm.mapstack.stamen.com/(toner-lite,$fff[difference],$fff[@23],$fff[hsl-saturation@20])/{z}/{x}/{y}.png"));
 
-  var svg = d3.select(leafletMap.getPanes().overlayPane).append("svg");
-  var g = svg.append("g").attr("class", "leaflet-zoom-hide");
-  
 // Use Leaflet to implement a D3 geometric transformation.
 function projectPoint(x, y) {
     var point = leafletMap.latLngToLayerPoint(new L.LatLng(y, x));
     this.stream.point(point.x, point.y);
 }
 
+var leafletMap = new L.Map("map", {center: [40.0565634,-1.278083], zoom: 8})
+    .addLayer(new L.TileLayer("http://{s}.sm.mapstack.stamen.com/(toner-lite,$fff[difference],$fff[@23],$fff[hsl-saturation@20])/{z}/{x}/{y}.png"));
+
 var transform = d3.geo.transform({ point: projectPoint });
 var path = d3.geo.path().projection(transform);
 var start = new Date();
 
-
 d3.csv("parcela", function(error, source) {
   if (error) throw error;
   
-  /* Add a LatLng object to each item in the dataset 
-    source.forEach(function(d) {
-        d.latLng = [+d.Y,+d.X];
-    });*/
-  
   function reformat(array) {
+                var data = [];
+                array.map(function (d, i) {
 
-        var data = [];
-        array.map(function (d, i) {
-            data.push({
-                id: i,
-                type: "Feature",
-                geometry: {
-                    coordinates: [+d.Y, +d.X],
-                    type: "Point"
-                }
-            });
-        });
-        return data;
-    }
-    var geoData = { type: "FeatureCollection", features: reformat(source) };
+                    data.push({
+                        id: i,
+                        type: "Feature",
+                        geometry: {
+                            coordinates: [+d.X, +d.Y],
+                            type: "Point"
+                        }
+                       
 
-    var feature = g.selectAll("path")
-      .data(geoData.features)
-    .enter().append("path");
+                    });
+                });
+                return data;
+            }
+            var geoData = { type: "FeatureCollection", features: reformat(source) };
 
-    // Reposition the SVG to cover the features.
-  function reset() {
-    var bounds = path.bounds(geoData),
-        topLeft = bounds[0],
-        bottomRight = bounds[1];
 
-    svg .attr("width", bottomRight[0] - topLeft[0])
-        .attr("height", bottomRight[1] - topLeft[1])
-        .style("left", topLeft[0] + "px")
-        .style("top", topLeft[1] + "px");
 
-    g   .attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
-
-    feature.attr("d", path);
-  }
-
-  leafletMap.on("viewreset", reset);
-  reset();
-/*
     var qtree = d3.geom.quadtree(geoData.features.map(function (data, i) {
         return {
             x: data.geometry.coordinates[0],
@@ -154,12 +131,13 @@ d3.csv("parcela", function(error, source) {
         };
       })
     );
-  */
+  
   console.log("Time to load file csv: " + new Date().setTime(new Date().getTime() - start.getTime()) + " ms "); 
   
   var list=[];  
+  var svg = d3.select(leafletMap.getPanes().overlayPane).append("svg");
+  var g = svg.append("g").attr("class", "leaflet-zoom-hide");
 
-  
     MercatorXofLongitude = function (lon) {
         return lon * 20037508.34 / 180;
     }
@@ -168,11 +146,11 @@ d3.csv("parcela", function(error, source) {
         return (Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180)) * 20037508.34 / 180;
     }  
 
-    //updateNodes(qtree);
+    updateNodes(qtree);
 
-    //leafletMap.on('moveend', mapmove);
+    leafletMap.on('moveend', mapmove);
 
-    //mapmove();     
+    mapmove();     
 
   //Button
   d3.selectAll("#run")
@@ -183,10 +161,9 @@ d3.csv("parcela", function(error, source) {
   
     function updateNodes(quadtree) {
         var nodes = [];
-        //quadtree.depth = 0; // root
+        quadtree.depth = 0; // root
 
         quadtree.visit(function (node, x1, y1, x2, y2) {
-            /*
             var nodeRect = {
                 left: MercatorXofLongitude(x1),
                 right: MercatorXofLongitude(x2),
@@ -198,12 +175,11 @@ d3.csv("parcela", function(error, source) {
 
             if (node.depth == 0) {
                 console.log(" width: " + node.width + "height: " + node.height);
-            }*/
+            }
             nodes.push(node);
-            /*
             for (var i = 0; i < 4; i++) {
                 if (node.nodes[i]) node.nodes[i].depth = node.depth + 1;
-            }*/
+            }
         });
         return nodes;
     }
@@ -217,11 +193,10 @@ d3.csv("parcela", function(error, source) {
         console.log(" scale: " + scale);
         var counter = 0;
         quadtree.visit(function (node, x1, y1, x2, y2) {
-           
             var p = node.point;
             var pwidth = node.width * scale;
             var pheight = node.height * scale;
- /*
+
             // -- if this is too small rectangle only count the branch and set opacity
             if ((pwidth * pheight) <= 1) {
                 // start collecting sub Pixel points
@@ -253,8 +228,6 @@ d3.csv("parcela", function(error, source) {
                 }
 
             }
-            */
-            pts.push(p);
             // if quad rect is outside of the search rect do nto search in sub nodes (returns true)
             return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
         });
@@ -326,7 +299,6 @@ d3.csv("parcela", function(error, source) {
   function redrawSubset(subset) {
         path.pointRadius(1);
         
-        /*
         var bounds = path.bounds({ type: "FeatureCollection", features: subset });
         var topLeft = bounds[0];
         var bottomRight = bounds[1];
@@ -336,23 +308,18 @@ d3.csv("parcela", function(error, source) {
             .attr("height", bottomRight[1] - topLeft[1])
             .style("left", topLeft[0] + "px")
             .style("top", topLeft[1] + "px");
-            */
-        svg.attr("width", width)
-            .attr("height", height)
-            .style("left", "0px")
-            .style("top", "0px");
-            
+
         var points = g.selectAll("path")
                               .data(subset);
                 points.enter().append("path");
                 points.exit().remove();
                 points.attr("d", path);
                 
-       /*points.style("fill-opacity", function (d) {
+       points.style("fill-opacity", function (d) {
             if (d.group) {
                 return (d.group * 0.1) + 0.2;
             }
-        });*/
+        });
 
   }
     

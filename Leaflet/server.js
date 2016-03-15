@@ -37,6 +37,9 @@ app.get('/muestrasQT', function(req, res){
 app.get('/parcela', function(req, res){
   res.sendfile(__dirname + '/public/files/parc_val_1.csv');
 });
+app.get('/parcela1M', function(req, res){
+  res.sendfile(__dirname + '/public/files/parc_val_2.csv');
+});
 app.get('/L.D3SvgOverlay.min.js', function(req, res){
   res.sendfile(__dirname + '/public/L.D3SvgOverlay.min.js');
 });

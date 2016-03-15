@@ -4,11 +4,6 @@
 
 @import url(//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.5/leaflet.css);
 
-#map {
-  width: 940px;
-  height: 550px;
-}
-
 canvas {
   position: absolute;
   margin: 10px;
@@ -18,12 +13,14 @@ canvas {
 
 span {
     float: left;
-    width: 70px;
+    width: 95px;
+    font-family: Georgia, 'Times New Roman', Times, serif; 
+    font-size: 12px;
 }
 input {
   background: whitesmoke;
   width: 140px;
-  font-size: 18px;
+  font-size: 10px;
   padding: 6px;
   text-align: center;
   margin-bottom: 5px;
@@ -39,23 +36,24 @@ button#run {
     width : 270px;
     background-color: lightsteelblue;
     position: absolute;
-    height:  800px;  
+    height:  830px;  
     margin: 10px;  
 }
 #pRight{
     margin-left: 280px;
     width : 1000px;    
     position: absolute;
-    height:  800px;
+    height:  830px;
 }
 
 </style>
 
 <div id="pLeft">
     <div id="ctrls">
-        <center><h3><u>Filtrar por:</u></h3><center>
+        <!--<center><h3><u>Filtrar por:</u></h3><center>-->
     </div>
     <button id="run" type="button">Procesar Filtro...</button><br>
+    <p>Símbolos: ("&gt;","&lt;","-")</p>
 </div>
 <div id="pRight">
     <div id="map"></div>
@@ -63,31 +61,13 @@ button#run {
 
 
 <script src="//d3js.org/d3.v3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.5/leaflet.js"></script>
-<script src="L.D3SvgOverlay.min.js"></script>
 <script>
 
 var width = 940,
-    height = 550;
-
-var map = new L.Map("map", {center: [40.0565634,-1.278083], zoom: 8})
-    .addLayer(new L.TileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"));
+    height = 830;
 
 var sourceTemp = [];
-var pointsOverlay = L.d3SvgOverlay(function(sel,proj){
-    //var minLogPop = Math.log2(d3.min(cities,function(d){return d.population;}));
-    var pointsUpd = sel.selectAll('rect').data(sourceTemp);
-    pointsUpd.enter()
-        .append('rect')
-        .attr('x',function(d){return proj.latLngToLayerPoint(d.latLng).x;})
-        .attr('y',function(d){return proj.latLngToLayerPoint(d.latLng).y;})
-        .attr('width',function(d){return 1;})
-        .attr('height',function(d){return 1;})        
-        .attr('fill',function(d){return "blue";});
-    }
-);
-
-var campos = ["TUREG", "TUSEC","INV"];
+var campos = ["TUREG", "TUSEC","VALOR","AC","CC","IP","TIPO","AATIPO","IPP","SUPERFICIE","PLUVIOMETRIA","TIPO_VERANO","ETP","VER","TMAX","TM","TMIN","CLASIF","INV","ARIDEZ","PSECO","PFRIO","PCAL","ALTURA_MEDIA","PENDIENTE_MEDIA","POTENCIALAGROLOGICO"];
   
 var linebreak = document.createElement("br");
 for(var i=0, max = campos.length;  i< max; i++){
@@ -102,15 +82,25 @@ for(var i=0, max = campos.length;  i< max; i++){
     document.getElementById('ctrls').appendChild(linebreak);
 }
 
+var projection = d3.geo.mercator()
+    .scale(15000)
+    .center([-1.278083,40.0565634])
+    //.translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+    
 var start = new Date();
-d3.csv("parcela", function(error, source) {
+d3.csv("parcela1M", function(error, source) {
   if (error) throw error;
   
   //Compute projected locations of each zipcode.
   source.forEach(function(d) {
-    d.latLng = [+d.Y,+d.X];
+    var p = projection([+d.X, +d.Y]);
+    if (p) d.x = Math.round(p[0]), d.y = Math.round(p[1]);
   });
- 
+  
   console.log("se cargo el fichero csv: " + new Date().setTime(new Date().getTime() - start.getTime()) + " ms "); 
   var list=[];
   
@@ -149,7 +139,9 @@ d3.csv("parcela", function(error, source) {
      
   function runFilter(){
     var startRender = new Date();
-    var values = d3.selectAll("input");    
+    var values = d3.selectAll("input");
+    var proc = d3.selectAll("#run")
+    proc.property("textContent","Procesando...");    
     sourceTemp = source;
     list.length = 0;
     values.each( function(d, i){
@@ -169,9 +161,8 @@ d3.csv("parcela", function(error, source) {
         }        
     });
    
-    map.removeLayer(pointsOverlay);
-    pointsOverlay.addTo(map);
-    //render(sourceTemp);  
+    render(sourceTemp);
+    proc.property("textContent","Procesar Filtro...");
     console.log(sourceTemp.length);
     console.log("Time fin render Filter: " + new Date().setTime(new Date().getTime() - startRender.getTime()) + " ms ");
   }
@@ -187,7 +178,7 @@ d3.csv("parcela", function(error, source) {
         .style("opacity", 0);
 
     var context = canvas1.node().getContext("2d");
-    //context.fillStyle = ;
+    context.fillStyle = "#fff";
     context.fillRect(0, 0, width, height);
 
     
@@ -195,7 +186,7 @@ d3.csv("parcela", function(error, source) {
     context.globalAlpha = .4;
     context.fillStyle = list.length > 0 ? "#aaa" : "#000";
     source.forEach(function(d) {
-    context.fillRect(d.x, d.y, 1, 1);
+        context.fillRect(d.x, d.y, 1, 1);
     });
 
     if(list.length > 0){     
