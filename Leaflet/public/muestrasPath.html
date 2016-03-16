@@ -105,7 +105,7 @@ var transform = d3.geo.transform({ point: projectPoint });
 var path = d3.geo.path().projection(transform);
 var start = new Date();
 
-d3.csv("parcela1M", function(error, source) {
+d3.csv("parcela", function(error, source) {
   if (error) throw error;
   
   function reformat(array) {
@@ -135,15 +135,8 @@ d3.csv("parcela1M", function(error, source) {
     .on("click", function(e) {
         runFilter();
   });
-  /*
-  var qtree = d3.geom.quadtree(geoData.features.map(function (data, i) {
-        return {
-            x: data.geometry.coordinates[0],
-            y: data.geometry.coordinates[1],
-            all: data
-        };
-      })
-    );*/
+  
+
 
     var feature = g.selectAll("path")
       .data(geoData.features)

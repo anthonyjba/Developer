@@ -4,7 +4,7 @@
     @import url(//cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.5/leaflet.css);
     #map {
         width: 940px;
-        height: 800px;
+        height: 550px;
         margin: 10px;
     }
     
@@ -18,7 +18,7 @@
     input {
         background: whitesmoke;
         width: 140px;
-        font-size: 11px;
+        font-size: 18px;
         padding: 6px;
         text-align: center;
         margin-bottom: 5px;
@@ -69,12 +69,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.5/leaflet.js"></script>
 <script>
     var width = 940,
-    height = 800;
+    height = 550;
 
 var sourceTemp = [];
 var headers = ["TUREG", "TUSEC", "INV"];
 var linebreak = document.createElement("br");
-var list=[];
 
 for (var i = 0, max = headers.length; i < max; i++) {
     var selElem = document.createElement('span');
@@ -92,7 +91,6 @@ for (var i = 0, max = headers.length; i < max; i++) {
     .addLayer(new L.TileLayer("http://{s}.sm.mapstack.stamen.com/(toner-lite,$fff[difference],$fff[@23],$fff[hsl-saturation@20])/{z}/{x}/{y}.png"));
 
   var svg = d3.select(leafletMap.getPanes().overlayPane).append("svg");
-  var svg = d3.select("#map").select("svg");
   var g = svg.append("g").attr("class", "leaflet-zoom-hide");
   
 // Use Leaflet to implement a D3 geometric transformation.
@@ -105,7 +103,8 @@ var transform = d3.geo.transform({ point: projectPoint });
 var path = d3.geo.path().projection(transform);
 var start = new Date();
 
-d3.csv("parcela1M", function(error, source) {
+
+d3.csv("parcela", function(error, source) {
   if (error) throw error;
   
   function reformat(array) {
@@ -116,9 +115,9 @@ d3.csv("parcela1M", function(error, source) {
                 obj[headers[j]] = d[headers[j]];
             }
             data.push({
-                //id: i,
+                id: i,
                 type: "Feature",
-                properties: obj,
+                properties: { obj },
                 geometry: {
                     coordinates: [+d.X, +d.Y],
                     type: "Point"
@@ -128,36 +127,15 @@ d3.csv("parcela1M", function(error, source) {
         return data;
     }
     var geoData = { type: "FeatureCollection", features: reformat(source) };
-    var geoDataTemp;
-    
-  //Button
-  d3.selectAll("#run")
-    .on("click", function(e) {
-        runFilter();
-  });
-  /*
-  var qtree = d3.geom.quadtree(geoData.features.map(function (data, i) {
-        return {
-            x: data.geometry.coordinates[0],
-            y: data.geometry.coordinates[1],
-            all: data
-        };
-      })
-    );*/
 
     var feature = g.selectAll("path")
       .data(geoData.features)
     .enter().append("path");
 
-  leafletMap.on("zoomend", reset);
-  
-    runFilter();
-    
   // Reposition the SVG to cover the features.
   function reset() {
     path.pointRadius(1);
-        
-    var bounds = (geoDataTemp.features.length == 0)? [[0,0],[0,0]] : path.bounds(geoDataTemp),
+    var bounds = path.bounds(geoData),
         topLeft = bounds[0],
         bottomRight = bounds[1];
 
@@ -168,41 +146,51 @@ d3.csv("parcela1M", function(error, source) {
 
     g   .attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
 
-   feature.attr("d", path);
-   
+    feature.attr("d", path);
   }
+
+  leafletMap.on("viewreset", reset);
+  reset();
 
   console.log("Time to load file csv: " + new Date().setTime(new Date().getTime() - start.getTime()) + " ms "); 
   
+  //Button
+  d3.selectAll("#run")
+    .on("click", function(e) {
+        runFilter();
+  });
+  //runFilter();
+  
+             
   /** Funciones de Filtrado **/  
   function filterInclude(col,val) {
     return function(element) {
-        return element.properties[col].indexOf(val) === 0;
+        return element[col].indexOf(val) === 0;
     }  
   }
   
   function filterGT(col,val) {
     return function(element) {
-        return element.properties[col] > val;
+        return element[col] > val;
     }  
   }
   
   function filterLT(col,val) {
     return function(element) {
-        return element.properties[col] < val;
+        return element[col] < val;
     }  
   }
   
   function filterRango(col,rango) {
     return function(element) {
-        return element.properties[col] >= rango[0] && element[col] <= rango[1];
+        return element[col] >= rango[0] && element[col] <= rango[1];
     }  
   }  
      
   function runFilter(){
     var startRender = new Date();
     var values = d3.selectAll("input");    
-    sourceTemp = geoData.features;
+    sourceTemp = geoData.features.f;
     list.length = 0;
     values.each( function(d, i){
         var dato=d3.select(this).property("value");        
@@ -216,13 +204,12 @@ d3.csv("parcela1M", function(error, source) {
             else if(dato.indexOf("-") > 0)
                 sourceTemp = sourceTemp.filter(filterRango(headers[i],dato.split("-")));
             else
-                sourceTemp = sourceTemp.filter(filterInclude(headers[i],dato));          
+                sourceTemp = sourceTemp.filter(filterInclude(headers[i],dato));
+          
         }        
     });
-    
-    geoDataTemp = { type: "FeatureCollection", features: sourceTemp };
-    console.log("Nº points: " + sourceTemp.length);
-    reset();
+        
+    console.log(sourceTemp.length);
     console.log("Time to render Filter: " + new Date().setTime(new Date().getTime() - startRender.getTime()) + " ms ");
   }
     
