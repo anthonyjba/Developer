@@ -105,7 +105,7 @@ var transform = d3.geo.transform({ point: projectPoint });
 var path = d3.geo.path().projection(transform);
 var start = new Date();
 
-d3.csv("parcela1M", function(error, source) {
+d3.csv("parcelas", function(error, source) {
   if (error) throw error;
   
   function reformat(array) {
