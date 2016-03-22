@@ -36,3 +36,7 @@ jspm_packages
 #csv
 *.csv
 *.csv#
+
+#some directories
+angulargen
+mapleaflet
